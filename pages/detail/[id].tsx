@@ -1,10 +1,15 @@
-import { GetStaticPaths, GetServerSideProps, InferGetServerSidePropsType } from 'next'
+import * as React from 'react'
+import { GetStaticPaths, GetStaticProps } from 'next'
 import { useSelector, useDispatch } from 'react-redux'
-import Layout from '../../components/Layout'
+import { Col, Row, Typography, DatePicker, Button, Popover } from 'antd'
+import { TransactionForm } from '../../components/TransactionForm'
+import { TransactionTable } from '../../components/TransactionTable'
+import { submitTransaction, addTransaction, removeTransaction } from '../../state/actions/ActionCreator'
 import { getAllDetails, getDetail } from '../../lib/details'
-import { State } from '../../utils/types'
+import { State, Transaction } from '../../utils/types'
 import { wrapper } from '../../state/store'
-import { addDeposit, addExpense } from '../../state/actions/ActionCreator'
+
+const { Title } = Typography
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const paths = getAllDetails()
@@ -14,9 +19,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   }
 }
 
-export const getServerSideProps: GetServerSideProps = wrapper.getServerSideProps(async ({ store, preview, params }) => {
-  store.dispatch(addDeposit({ sum: 10 }))
-
+export const getStaticProps: GetStaticProps = wrapper.getStaticProps(async ({ preview, params }) => {
   const detail = getDetail(params.id)
   return {
     props: {
@@ -25,23 +28,73 @@ export const getServerSideProps: GetServerSideProps = wrapper.getServerSideProps
   }
 })
 
-const Detail = ({ detail }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const onSelect = (value) => {
+  console.log(value.format('YYYY-MM-DD'))
+}
+
+const Detail = ({ detail }) => {
   const dispatch = useDispatch()
   const { detailData } = detail
-  const { lastOperation, currentSum } = useSelector<State, State>((state) => state)
+  const { currentSum, futureTransactions, pastTransactions } = useSelector<State, State>((state) => state)
+
+  const dispatchSubmitTransaction = (id: string) => {
+    dispatch(submitTransaction(id))
+  }
+
+  const dispatchRemoveTransaction = (id: string) => {
+    dispatch(removeTransaction(id))
+  }
+
+  const dispatchAddTransaction = (transaction: Transaction) => {
+    dispatch(addTransaction(transaction))
+  }
+
   return (
-    <Layout>
-      <div>
-        <h1> {detailData.title} </h1>
-        {detailData.text}
-        <br />
-        Last operation: {lastOperation} <br />
-        Current sum: {currentSum}
-        <br />
-        <a onClick={() => dispatch(addDeposit({ sum: 10 }))}>Deposit</a>/
-        <a onClick={() => dispatch(addExpense({ sum: 20 }))}>Expense</a>
-      </div>
-    </Layout>
+    <>
+      <Row>
+        <Col span={12}>
+          <Title> {detailData.title} </Title>
+        </Col>
+        <Col span={6}>
+          <DatePicker onChange={onSelect} format="YYYY-MM-DD" />
+        </Col>
+        <Col span={6}>
+          <Title level={3}> Current sum: {currentSum} </Title>
+        </Col>
+      </Row>
+      <Row>
+        <Col span={6}>
+          <Popover
+            destroyTooltipOnHide
+            placement="bottom"
+            title={'Add Deposit'}
+            content={<TransactionForm type={'Deposit'} dispatch={dispatchAddTransaction} />}
+            trigger="click"
+          >
+            <Button>Add Deposit</Button>
+          </Popover>
+        </Col>
+        <Col span={6}>
+          <Popover
+            destroyTooltipOnHide
+            placement="bottom"
+            title={'Add Expense'}
+            content={<TransactionForm type={'Expense'} dispatch={dispatchAddTransaction} />}
+            trigger="click"
+          >
+            <Button>Add Expense</Button>
+          </Popover>
+        </Col>
+      </Row>
+      <Row>
+        <TransactionTable
+          futureTransactions={futureTransactions}
+          pastTransactions={pastTransactions}
+          dispatchSubmit={dispatchSubmitTransaction}
+          dispatchRemove={dispatchRemoveTransaction}
+        />
+      </Row>
+    </>
   )
 }
 

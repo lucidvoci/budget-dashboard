@@ -1,17 +1,19 @@
-import Layout from '../components/Layout'
+import * as React from 'react'
 import Link from 'next/link'
+import { Button } from 'antd'
 
 const Dashboard = () => (
-  <Layout>
+  <>
     <img src="images/piggy-bank.png" alt="Logo" />
     <div>
+      <Button type="primary">Button</Button>
       <Link href="/detail/1">
         <a> Detail </a>
       </Link>
       <h1> Hello world </h1>
       Welcome to Dashboard
     </div>
-  </Layout>
+  </>
 )
 
 export default Dashboard

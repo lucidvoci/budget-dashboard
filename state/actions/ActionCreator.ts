@@ -1,28 +1,23 @@
-import { ADD_DEPOSIT, ADD_EXPENSE } from './ActionConstants'
-import axios from 'axios'
+import { SUBMIT_TRANSACTION, ADD_TRANSACTION, REMOVE_TRANSACTION } from './ActionConstants'
+import { Transaction } from '../../utils/types'
 
-const getSum = () => axios.get('http://localhost:3050/current-sum')
-  .then(response => response.data)
-
-export const addDeposit = (depositDetails) => {
+export const submitTransaction = (transactionId: string) => {
   return {
-    type: ADD_DEPOSIT,
-    payload: getSum,
+    type: SUBMIT_TRANSACTION,
+    payload: transactionId,
   }
 }
 
-export const addExpense = (depositDetails) => {
-  return async (dispatch) => {
-    try {
-      const response = await axios.get('http://localhost:3050/current-sum')
-      console.log(response.data)
-      dispatch({
-        type: ADD_EXPENSE,
-        payload: depositDetails.sum,
-      })
-    } catch (error) {
-      console.log(error)
-    }
-    return 'done'
+export const addTransaction = (transaction: Transaction) => {
+  return {
+    type: ADD_TRANSACTION,
+    payload: transaction,
+  }
+}
+
+export const removeTransaction = (transactionId: string) => {
+  return {
+    type: REMOVE_TRANSACTION,
+    payload: transactionId,
   }
 }

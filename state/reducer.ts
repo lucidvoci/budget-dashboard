@@ -1,11 +1,15 @@
-import { State } from '../utils/types'
+import { State, TransactionType } from '../utils/types'
 import { AnyAction } from 'redux'
 import { HYDRATE } from 'next-redux-wrapper'
-import { ADD_DEPOSIT, ADD_EXPENSE, ADD_DEPOSIT_FULFILLED } from './actions/ActionConstants'
+import { pastTransactions, futureTransactions } from '../utils/test-data'
+import { getNextTransaction } from '../utils/transactions'
+import { ADD_TRANSACTION, SUBMIT_TRANSACTION, REMOVE_TRANSACTION } from './actions/ActionConstants'
 
 const initialState: State = {
-  lastOperation: 'NONE',
+  id: '0',
   currentSum: 0,
+  pastTransactions,
+  futureTransactions,
 }
 
 const reducer = (state: State = initialState, action: AnyAction) => {
@@ -15,23 +19,30 @@ const reducer = (state: State = initialState, action: AnyAction) => {
         ...state,
         ...action.payload,
       }
-    case ADD_DEPOSIT:
+    case ADD_TRANSACTION:
       return {
         ...state,
-        lastOperation: 'DEPOSIT',
-        currentSum: state.currentSum + action.payload,
+        futureTransactions: [...state.futureTransactions, action.payload],
       }
-    case ADD_DEPOSIT_FULFILLED:
+    case REMOVE_TRANSACTION:
       return {
         ...state,
-        lastOperation: 'ADD_DEPOSIT_FULFILLED',
-        currentSum: state.currentSum + action.payload,
+        futureTransactions: state.futureTransactions.filter((t) => t.id != action.payload),
       }
-    case ADD_EXPENSE:
+    case SUBMIT_TRANSACTION:
+      const transaction = state.futureTransactions.find((t) => t.id === action.payload)
+      const recurringTransaction = getNextTransaction(transaction)
       return {
         ...state,
-        lastOperation: 'EXPENSE',
-        currentSum: state.currentSum - action.payload,
+        pastTransactions: [...state.pastTransactions, transaction],
+        futureTransactions: [
+          ...state.futureTransactions.filter((t) => t.id != transaction.id),
+          ...(recurringTransaction ? [recurringTransaction] : []),
+        ],
+        currentSum:
+          transaction.type === TransactionType.Deposit
+            ? state.currentSum + transaction.sum
+            : state.currentSum - transaction.sum,
       }
     default:
       return state
